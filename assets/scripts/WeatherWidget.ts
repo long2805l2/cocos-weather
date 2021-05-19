@@ -13,9 +13,6 @@ export class WeatherWidget extends Component
 	public city: RichText|null = null;
 
 	@property({type: RichText})
-	public temperature: RichText|null = null;
-
-	@property({type: RichText})
 	public feelslike: RichText|null = null;
 
 	@property({type: RichText})
@@ -89,13 +86,10 @@ export class WeatherWidget extends Component
 		if (this.city)
 		{
 			if (this._data)
-				this.city.string = this._data.name;
+				this.city.string = `${this._data.name}\n${this._temperature} °C`;
 			else
-				this.city.string = this.cityName;
+				this.city.string = `${this.cityName}\n${this._temperature} °C`;
 		}
-
-		if (this.temperature)
-			this.temperature.string = `${this._temperature} °C`;
 
 		if (this.feelslike)
 			this.feelslike.string = `${this._feelslike} °C`;
@@ -104,20 +98,14 @@ export class WeatherWidget extends Component
 			this.humidity.string = `${this._humidity} %`;
 			
 		if (this.wind)
-			this.wind.string = `${this._wind} m/s`;
+			this.wind.string = `${this._wind} mps`;
 
 		if (this.weatherIcon)
 		{
 			let icon = this.weatherIcon;
-			log ("this._weatherIcon", this._weatherIcon);
-			assetManager.loadRemote(`${this._weatherIcon}`, (err: any, texture: ImageAsset) =>
+			assetManager.loadRemote(this._weatherIcon, (err: any, texture: ImageAsset) =>
 			{
-				if (err)
-				{
-					log ("fill", "icon", "error", err);
-					return;
-				}
-				if (!texture)
+				if (err && !texture)
 					return;
 					
 				const spriteFrame = new SpriteFrame();
