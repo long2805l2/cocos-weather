@@ -20,9 +20,9 @@ export class OpenWeather
 
 	public static ICON_WEATHER_URL (iconId:string)
 	{
-		return `http://openweathermap.org/img/w/${iconId}.png`;
+		return `http://openweathermap.org/img/wn/${iconId}@4x.png`;
 	}
-	
+
 	public static GET_DATA (url:string, callback: (error:Error, jsonStr:string) => any)
 	{
 		if (callback)
