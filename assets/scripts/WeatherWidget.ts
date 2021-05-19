@@ -1,6 +1,6 @@
 
 import { _decorator, Component, Node, log } from 'cc';
-import { WeatherAPI } from './WeatherAPI';
+import { OpenWeather } from './OpenWeather';
 const { ccclass, property } = _decorator;
 
 @ccclass('WeatherWidget')
