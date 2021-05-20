@@ -1,5 +1,7 @@
 
 import { _decorator, Component, Node, log, CCLoader, Label, RichText, Gradient, Graphics, SpriteFrame, Sprite, resources, Texture2D, assetManager, ImageAsset } from 'cc';
+import { CitiesWidget } from './CitiesWidget';
+
 import { OpenWeather } from './OpenWeather';
 const { ccclass, property } = _decorator;
 
@@ -21,8 +23,14 @@ export class WeatherWidget extends Component
 	@property({type: RichText})
 	public wind: RichText|null = null;
 
+	@property({type: Label})
+	public close: Label|null = null;
+
 	@property({type: Sprite})
 	public weatherIcon: Sprite|null = null;
+
+	@property({type: Node})
+	public citiesView:Node|null = null;
 	
 	private _data:any = null;
 	private _temperature:number = 0;
@@ -33,8 +41,16 @@ export class WeatherWidget extends Component
 	
 	start ()
 	{
+		this.loadCity (this.cityName);
+
+		if (this.close)
+			this.close.node.on(Node.EventType.MOUSE_DOWN, this.onBack.bind (this));
+	}
+
+	loadCity (cityName:string)
+	{
 		OpenWeather.GET_DATA (
-			OpenWeather.API_URL_GET_BY_CITY (this.cityName),
+			OpenWeather.API_URL_GET_BY_CITY (cityName),
 			this.onLoadCompleted.bind (this)
 		);
 	}
@@ -113,5 +129,13 @@ export class WeatherWidget extends Component
 				icon.spriteFrame = spriteFrame;
 			});
 		}
+	}
+
+	onBack ()
+	{
+		this.node.active = false;
+		
+		if (this.citiesView)
+			this.citiesView.active = true;
 	}
 }
