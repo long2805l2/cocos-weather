@@ -1,5 +1,5 @@
 
-import { _decorator, Component, Node, log, CCLoader, Label, RichText, Gradient, Graphics, SpriteFrame, Sprite, resources, Texture2D, assetManager, ImageAsset } from 'cc';
+import { _decorator, Component, Node, log, Label, RichText, Gradient, Graphics, SpriteFrame, Sprite, resources, Texture2D, assetManager, ImageAsset, director, tween, color, sys, systemEvent, SystemEventType, EventKeyboard, macro } from 'cc';
 import { CitiesWidget } from './CitiesWidget';
 
 import { OpenWeather } from './OpenWeather';
@@ -8,9 +8,6 @@ const { ccclass, property } = _decorator;
 @ccclass('WeatherWidget')
 export class WeatherWidget extends Component
 {
-	@property
-	public cityName:string = "London";
-
 	@property({type: RichText})
 	public city: RichText|null = null;
 
@@ -41,36 +38,22 @@ export class WeatherWidget extends Component
 	
 	start ()
 	{
-		this.loadCity (this.cityName);
+		this.loadCity (CitiesWidget.currentCityData);
 
 		if (this.close)
 			this.close.node.on(Node.EventType.MOUSE_DOWN, this.onBack.bind (this));
+
+		systemEvent.on(SystemEventType.KEY_DOWN, this.onKeyDown, this);
 	}
 
-	loadCity (cityName:string)
+    onDestroy ()
 	{
-		OpenWeather.GET_DATA (
-			OpenWeather.API_URL_GET_BY_CITY (cityName),
-			this.onLoadCompleted.bind (this)
-		);
-	}
+        systemEvent.off(SystemEventType.KEY_DOWN, this.onKeyDown, this);
+    }
 
-	onLoadCompleted (error:Error, jsonStr:string)
+	loadCity (weatherJson:string)
 	{
-		if (error)
-		{
-			log ("onLoadCompleted", "error", error.name, error.message);
-			return;
-		}
-
-		if (jsonStr)
-			this.parse (jsonStr);
-
-		this.fill ();
-	}
-	
-	parse (weatherJson:string)
-	{
+		log ("weatherJson", weatherJson);
 		if (!weatherJson)
 			return;
 
@@ -84,6 +67,8 @@ export class WeatherWidget extends Component
 			this._humidity = obj.main.humidity;
 			this._wind = obj.wind.speed;
 			this._weatherIcon = OpenWeather.ICON_WEATHER_URL (obj.weather [0].icon);
+
+			this.fill ();
 		}
 		catch (error)
 		{
@@ -99,13 +84,8 @@ export class WeatherWidget extends Component
 
 		log ("data", JSON.stringify (this._data));
 
-		if (this.city)
-		{
-			if (this._data)
-				this.city.string = `${this._data.name}\n${this._temperature} °C`;
-			else
-				this.city.string = `${this.cityName}\n${this._temperature} °C`;
-		}
+		if (this.city && this._data)
+			this.city.string = `${this._data.name}\n${this._temperature} °C`;
 
 		if (this.feelslike)
 			this.feelslike.string = `${this._feelslike} °C`;
@@ -127,15 +107,26 @@ export class WeatherWidget extends Component
 				const spriteFrame = new SpriteFrame();
 				spriteFrame.texture = texture._texture;
 				icon.spriteFrame = spriteFrame;
+				icon.color = color (255, 255, 255, 255);
+
 			});
+		}
+	}
+
+	onKeyDown (event:EventKeyboard)
+	{
+		log ("onKeyDown", event.keyCode, macro.KEY.back);
+		switch (event.keyCode)
+		{
+			case macro.KEY.back:
+			case macro.KEY.escape:
+				this.onBack ();
+				break;
 		}
 	}
 
 	onBack ()
 	{
-		this.node.active = false;
-		
-		if (this.citiesView)
-			this.citiesView.active = true;
+		director.loadScene ("main");
 	}
 }

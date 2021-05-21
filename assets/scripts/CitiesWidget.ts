@@ -1,6 +1,6 @@
 
-import { _decorator, Component, Node, ScrollView, Label, log, color, UITransform, Vec3, size, Graphics, Prefab, instantiate } from 'cc';
-import { CityItem } from './CityItem';
+import { _decorator, Component, Node, ScrollView, log, Prefab, instantiate, director, logID, warnID, sys, System } from 'cc';
+import { OpenWeather } from './OpenWeather';
 import { WeatherWidget } from './WeatherWidget';
 const { ccclass, property } = _decorator;
 
@@ -16,14 +16,20 @@ export class CitiesWidget extends Component
 	@property({type: Prefab})
 	itemPrefab:Prefab|null = null
 
+	private onLoading:boolean = false;
+	public static currentCityData:string = "";
+
 	start ()
 	{
 		let cities:string[] = ["Paris", "New York", "Istanbul"];
-		cities.unshift ("My City");
+		if (sys.os == sys.OS.ANDROID)
+		{
+			var result = jsb.reflection.callStaticMethod("com/cocos/game/AppActivity", "getCurrentLocation", "()Ljava/lang/String;");
+			cities.unshift (result);
+		}
 
 		if (this.listOfCities && this.listOfCities.content && this.itemPrefab)
 		{
-			let y = 0;
 			let content = this.listOfCities.content;
 			content.removeAllChildren ();
 
@@ -38,7 +44,6 @@ export class CitiesWidget extends Component
 
 				item.init (city, this.itemOnClick.bind (this));
 				content.addChild (node);
-				
 			}
 		}
 	}
@@ -49,13 +54,26 @@ export class CitiesWidget extends Component
 
 	itemOnClick (city:string)
 	{
-		log ("on touch city", city);
-
-		if (!this.weatherView)
+		if (this.onLoading)
 			return;
-			
-		this.node.active = false;
-		this.weatherView.node.active = true;
-		this.weatherView.loadCity (city);
+
+		this.onLoading = true;
+		OpenWeather.GET_DATA (
+			OpenWeather.API_URL_GET_BY_CITY (city),
+			this.onLoadCompleted.bind (this)
+		);
+	}
+
+	onLoadCompleted (error:Error, jsonStr:string)
+	{
+		this.onLoading = false;
+		if (error)
+		{
+			log ("onLoadCompleted", "error", error.name, error.message);
+			return;
+		}
+
+		CitiesWidget.currentCityData = jsonStr;
+		director.loadScene("weather");
 	}
 }
