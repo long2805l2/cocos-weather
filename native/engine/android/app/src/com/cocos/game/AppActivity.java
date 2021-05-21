@@ -4,122 +4,109 @@ import android.os.Bundle;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
-import android.content.DialogInterface;
 
 import com.cocos.service.SDKWrapper;
 import com.cocos.lib.CocosActivity;
+import com.cocos.lib.CocosHelper;
+import com.cocos.lib.CocosJavascriptJavaBridge;
 
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Build;
 
-import android.app.AlertDialog;
-import android.provider.Settings;
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.Manifest;
 import android.content.pm.PackageManager;
- 
 
-public class AppActivity extends CocosActivity 
-						 implements GoogleApiClient.ConnectionCallbacks,
-						 			GoogleApiClient.OnConnectionFailedListener
+
+public class AppActivity extends CocosActivity
+						 implements LocationListener
 {
-	// LocationManager locationManager;
-	// Context mContext;
+	private static AppActivity app = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
-		// mContext = this;
-		// locationManager = (LocationManager) mContext.getSystemService(Context.LOCATION_SERVICE);
-		// isLocationEnabled();
-
 		if (!isTaskRoot()) {
 			return;
 		}
-		
 		SDKWrapper.shared().init(this);
+		app = this;
 	}
 
-	LocationListener locationListenerGPS = new LocationListener()
-	{
-		@Override
-		public void onLocationChanged(android.location.Location location) {
-			double latitude = location.getLatitude();
-			double longitude = location.getLongitude();
-			String msg="com.myweather.AppActivity, New Latitude: " + latitude + "New Longitude: " + longitude;
-			System.out.println (msg);
+	private static double lastLatitude = 0;
+	private static double lastLongitude = 0;
+	
+	@Override
+	public void onLocationChanged(Location location) {
+		double newLatitude = location.getLatitude();
+		double newLongitude = location.getLongitude();
+		System.out.println("com.weather.AppActivity::onLocationChanged, check " + newLatitude + ", " + newLongitude);
+		if (lastLatitude == 0 && lastLongitude == 0)
+		{
+			CocosHelper.runOnGameThread(new Runnable() {
+				@Override
+				public void run() {
+					System.out.println("com.weather.AppActivity::onLocationChanged, runOnGameThread " + newLatitude + ", " + newLongitude);
+				}
+			});
 		}
+		lastLatitude = newLatitude;
+		lastLongitude = newLongitude;
+	}
 
-		@Override
-		public void onStatusChanged(String provider, int status, Bundle extras) {
-			String msg="com.myweather.AppActivity, onStatusChanged: " + provider + ", " + status;
-			System.out.println (msg);
-		}
+	@Override
+	public void onStatusChanged(String provider, int status, Bundle extras) {
+		String msg="com.myweather.AppActivity, onStatusChanged: " + provider + ", " + status;
+		System.out.println (msg);
+	}
 
-		@Override
-		public void onProviderEnabled(String provider) {
-			String msg="com.myweather.AppActivity, onProviderEnabled: " + provider;
-			System.out.println (msg);
-		}
+	@Override
+	public void onProviderEnabled(String provider) {
+		String msg="com.myweather.AppActivity, onProviderEnabled: " + provider;
+		System.out.println (msg);
+	}
 
-		@Override
-		public void onProviderDisabled(String provider) {
-			String msg="com.myweather.AppActivity, onProviderDisabled: " + provider;
-			System.out.println (msg);
-		}
-	};
+	@Override
+	public void onProviderDisabled(String provider) {
+		String msg="com.myweather.AppActivity, onProviderDisabled: " + provider;
+		System.out.println (msg);
+	}
 
-	// private void isLocationEnabled()
-	// {
-	// 	System.out.println ("com.myweather.AppActivity, isLocationEnabled");
-	// 	boolean isGPS = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-	// 	boolean isNetwork = checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+	public static void getLocationCoordinate() {
+		System.out.println("com.weather.AppActivity::getLocationCoordinate check " + lastLatitude + "," + lastLongitude);
+		if (lastLatitude != 0 && lastLongitude != 0)
+			return;
 		
-	// 	if (isGPS || isNetwork)
-	// 	{
-	// 		System.out.println ("com.myweather.AppActivity, isLocationEnabled: requestLocationUpdates");
-	// 		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 10, locationListenerGPS);
-			
-	// 		android.location.Location location = locationManager.getLastKnownLocation(isGPS ? LocationManager.GPS_PROVIDER : LocationManager.NETWORK_PROVIDER);
-	// 		if (location != null)
-	// 		{
-	// 			double latitude = location.getLatitude();
-	// 			double longitude = location.getLongitude();
-	// 			String msg="com.myweather.AppActivity, getLastKnownLocation: " + latitude + ", " + longitude;
-	// 			System.out.println (msg);
-	// 		}
-	// 		else
-	// 			System.out.println ("com.myweather.AppActivity, getLastKnownLocation: null, " + isGPS + ", " + isNetwork);
+		app.runOnUiThread(new Runnable() {
+			@TargetApi(Build.VERSION_CODES.M)
+			@Override
+			public void run() {
+				System.out.println("com.weather.AppActivity::getLocationCoordinate, runOnUiThread ");
+				app.requestLocationData();
+			}
+		});
+	}
 
-	// 		return;
-	// 	}
-
-	// 	AlertDialog.Builder alertDialog = new AlertDialog.Builder(mContext);
-	// 	alertDialog.setTitle("Enable Location");
-	// 	alertDialog.setMessage("Your locations setting is not enabled. Please enabled it in settings menu.");
-	// 	alertDialog.setPositiveButton("Location Settings", new DialogInterface.OnClickListener()
-	// 	{
-	// 		public void onClick(DialogInterface dialog, int which){
-	// 			Intent intent = new Intent(Settings.ACTION_LOCALE_SETTINGS);
-	// 			startActivity(intent);
-	// 		}
-	// 	});
-	// 	alertDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener()
-	// 	{
-	// 		public void onClick(DialogInterface dialog, int which){
-	// 			dialog.cancel();
-	// 		}
-	// 	});
-	// 	AlertDialog alert=alertDialog.create();
-	// 	alert.show();
-	// }
+	@TargetApi(Build.VERSION_CODES.M)
+	public void requestLocationData()
+	{
+		LocationManager locationManager = (LocationManager) app.getSystemService(Context.LOCATION_SERVICE);
+		if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+			System.out.println("com.weather.AppActivity::getLocationCoordinate, requestLocationData ");
+			requestPermissions(new String[] { Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+			return;
+		}
+		System.out.println("com.weather.AppActivity::getLocationCoordinate, requestLocationUpdates 2");
+		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, (LocationListener) app);
+		locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, (LocationListener) app);
+	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		// isLocationEnabled();
-
 		SDKWrapper.shared().onResume();
 	}
 
@@ -132,7 +119,6 @@ public class AppActivity extends CocosActivity
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		// Workaround in https://stackoverflow.com/questions/16283079/re-launch-of-activity-on-home-button-but-only-the-first-time/16447508
 		if (!isTaskRoot()) {
 			return;
 		}
@@ -201,27 +187,7 @@ public class AppActivity extends CocosActivity
 	
 	public static String getCurrentLocation ()
 	{
+		getLocationCoordinate ();
 		return "My City is Ho Chi Minh";
 	}
-
-	@Override
-    public void onConnected(@Nullable Bundle bundle)
-	{
-        // getLocation();
-		System.out.println ("com.myweather.AppActivity, onConnected: " );
-    }
-    
-	@Override
-    public void onConnectionSuspended(int i)
-	{
-        // gac.connect();
-		
-		System.out.println ("com.myweather.AppActivity, onConnectionSuspended: " );
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult)
-	{
-		System.out.println ("com.myweather.AppActivity, onConnectionFailed: " + connectionResult.getErrorMessage());
-    }
 }

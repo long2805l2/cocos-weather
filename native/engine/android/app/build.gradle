@@ -113,6 +113,4 @@ dependencies {
     implementation fileTree(dir: "${COCOS_ENGINE_PATH}/cocos/platform/android/java/libs", include: ['*.jar'])
     implementation project(':libservice')
     implementation project(':libcocos')
-	
-	compile 'com.google.android.gms:play-services-location:11.8.0'
 }
