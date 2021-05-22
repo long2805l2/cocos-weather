@@ -20,7 +20,7 @@ export class OpenWeather
 
 	public static API_URL_GET_BY_GEOGRAPHIC_COORDINATES (lat:number, lon:number):string
 	{
-		return `api.openweathermap.org/data/${this.API_VERSION}/weather?lat=${lat}&lon=${lon}&appid=${this.API_KEY}&units=metric`;
+		return `http://api.openweathermap.org/data/${this.API_VERSION}/weather?lat=${lat}&lon=${lon}&appid=${this.API_KEY}&units=metric`;
 	}
 
 	public static ICON_WEATHER_URL (iconId:string)
