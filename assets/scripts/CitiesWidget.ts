@@ -21,7 +21,6 @@ export class CitiesWidget extends Component
 	private loadingSteps:string[]|null = null;
 	private nextTime:number = -1;
 
-	private static myCity:string = "";
 	private static citiesData:Map<string, any>;
 	public static currentCityData:any|null = null;
 
@@ -37,6 +36,8 @@ export class CitiesWidget extends Component
 
 			if (sys.os == sys.OS.ANDROID)
 				this.loadingSteps.unshift ("myCity");
+			else if (sys.os == sys.OS.WINDOWS)
+				this.loadingSteps.unshift ("myFakeCity");
 		}
 		else
 			this.init ();
@@ -59,20 +60,34 @@ export class CitiesWidget extends Component
 			if (this.loadingSteps.length > 0)
 			{
 				let city = this.loadingSteps [0];
-				if (city == "myCity")
+				switch (city)
 				{
-					let result = jsb.reflection.callStaticMethod("com/cocos/game/AppActivity", "getCurrentLocation", "()Ljava/lang/String;");
-					if (result == "")
-						return;
+					case "myCity":
+					{
+						let result = jsb.reflection.callStaticMethod("com/cocos/game/AppActivity", "getCurrentLocation", "()Ljava/lang/String;");
+						if (result == "")
+							return;
 
-					let location = JSON.parse (result);
-					this.loadingSteps.shift ();
-					this.loadCityByLocation (location.lat, location.lon);
-				}
-				else
-				{
-					this.loadingSteps.shift ();
-					this.loadCityByName (city);
+						let location = JSON.parse (result);
+						this.loadingSteps.shift ();
+						this.loadCityByLocation (location.lat, location.lon);
+					}
+					break;
+
+					case "myFakeCity":
+					{
+						let location = { lat: 10.762622, lon: 106.660172 };
+						this.loadingSteps.shift ();
+						this.loadCityByLocation (location.lat, location.lon);
+					}
+					break;
+					
+					default:
+					{
+						this.loadingSteps.shift ();
+						this.loadCityByName (city);
+					}
+					break;
 				}
 			}
 			else
