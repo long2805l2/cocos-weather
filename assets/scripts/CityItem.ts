@@ -5,25 +5,22 @@ const { ccclass, property } = _decorator;
 @ccclass('CityItem')
 export class CityItem extends Component
 {
-	@property
-	nameCity:string = "";
-
 	@property({type: Label})
 	nameLabel:Label|null = null;
+
+	private cityCode:string = "";
+	private cityName:string = "";
 
 	private onClick: ((city:string) => void) | null = null;
 
 	start ()
 	{
-		if (!this.nameLabel)
-			return;
-			
-		this.nameLabel.string = this.nameCity;
 	}
 
-	init (city:string, callback: (city:string) => void)
+	init (cityCode:string, city:string, callback: (city:string) => void)
 	{
-		this.nameCity = city;
+		this.cityCode = cityCode;
+		this.cityName = city;
 		this.onClick = callback;
 
 		if (this.nameLabel)
@@ -37,6 +34,6 @@ export class CityItem extends Component
 	onTouch (event:any)
 	{
 		if (this.onClick)
-			this.onClick (this.nameCity);
+			this.onClick (this.cityCode);
 	}
 }
