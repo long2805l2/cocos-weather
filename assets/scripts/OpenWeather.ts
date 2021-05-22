@@ -18,6 +18,11 @@ export class OpenWeather
 		return `http://api.openweathermap.org/data/${this.API_VERSION}/weather?q=${params}&appid=${this.API_KEY}&units=metric`;
 	}
 
+	public static API_URL_GET_BY_GEOGRAPHIC_COORDINATES (lat:number, lon:number):string
+	{
+		return `api.openweathermap.org/data/${this.API_VERSION}/weather?lat=${lat}&lon=${lon}&appid=${this.API_KEY}&units=metric`;
+	}
+
 	public static ICON_WEATHER_URL (iconId:string)
 	{
 		return `http://openweathermap.org/img/wn/${iconId}@4x.png`;
