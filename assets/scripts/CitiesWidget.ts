@@ -10,56 +10,133 @@ export class CitiesWidget extends Component
 	@property({type: ScrollView})
 	listOfCities:ScrollView|null = null;
 
-	@property({type: WeatherWidget})
-	weatherView:WeatherWidget|null = null;
-
 	@property({type: Prefab})
-	itemPrefab:Prefab|null = null
+	itemPrefab:Prefab|null = null;
+
+	@property({type: Node})
+	loading:Node|null = null;
 
 	private onLoading:boolean = false;
-	public static currentCityData:string = "";
+	
+	private loadingSteps:string[]|null = null;
+	private nextTime:number = -1;
+
+	private static myCity:string = "";
+	private static citiesData:Map<string, any>;
+	public static currentCityData:any|null = null;
 
 	start ()
 	{
-		let cities:string[] = ["Paris", "New York", "Istanbul"];
-		if (sys.os == sys.OS.ANDROID)
+		if (!CitiesWidget.citiesData || CitiesWidget.citiesData.size == 0)
 		{
-			var result = jsb.reflection.callStaticMethod("com/cocos/game/AppActivity", "getCurrentLocation", "()Ljava/lang/String;");
-			cities.unshift (result);
+			CitiesWidget.citiesData = new Map<string, any>();
+
+			this.loadingSteps = ["Paris", "New York", "Istanbul"];
+			this.onLoading = false;
+			this.nextTime = 0;
+
+			if (sys.os == sys.OS.ANDROID)
+				this.loadingSteps.unshift ("myCity");
 		}
-
-		if (this.listOfCities && this.listOfCities.content && this.itemPrefab)
-		{
-			let content = this.listOfCities.content;
-			content.removeAllChildren ();
-
-			for (let id in cities)
-			{
-				let city = cities [id];
-				let node:Node|null = instantiate(this.itemPrefab);
-				let item:any = node.getComponent ("CityItem");
-
-				if (!item)
-					continue;
-
-				item.init (city, this.itemOnClick.bind (this));
-				content.addChild (node);
-			}
-		}
+		else
+			this.init ();
 	}
 
-	update ()
-	{
-	}
-
-	itemOnClick (city:string)
+	update (delta:number)
 	{
 		if (this.onLoading)
 			return;
 
+		if (this.loadingSteps)
+		{
+			this.nextTime -= delta;
+			// log ("update", this.loadingSteps.length, delta, this.nextTime);
+
+			if (this.nextTime > 0)
+				return;
+
+			this.nextTime = 1;
+			if (this.loadingSteps.length > 0)
+			{
+				let city = this.loadingSteps [0];
+				if (city == "myCity")
+				{
+					let result = jsb.reflection.callStaticMethod("com/cocos/game/AppActivity", "getCurrentLocation", "()Ljava/lang/String;");
+					if (result == "")
+						return;
+
+					let location = JSON.parse (result);
+					this.loadingSteps.shift ();
+					this.loadCityByLocation (location.lat, location.lon);
+				}
+				else
+				{
+					this.loadingSteps.shift ();
+					this.loadCityByName (city);
+				}
+			}
+			else
+			{
+				this.init ();
+				this.loadingSteps = null;
+			}
+		}
+	}
+
+	init ()
+	{
+		log ("call init");
+		if (!this.listOfCities || !this.listOfCities.content || !this.itemPrefab)
+			return;
+			
+		let content = this.listOfCities.content;
+		content.removeAllChildren ();
+		
+		CitiesWidget.citiesData.forEach ((value:any, city:string) =>
+		{
+			log ("init city", city);
+			if (!this.itemPrefab)
+				return;
+
+			let node:Node|null = instantiate(this.itemPrefab);
+			let item:any = node.getComponent ("CityItem");
+
+			if (!item)
+				return;
+			
+			item.init (city, this.itemOnClick.bind (this));
+			content.addChild (node);
+		});
+
+		this.listOfCities.node.active = true;
+
+		if (this.loading)
+			this.loading.active = false;
+	}
+
+	itemOnClick (city:string)
+	{
+		if (!CitiesWidget.citiesData.has (city))
+			return;
+
+		CitiesWidget.currentCityData = CitiesWidget.citiesData.get (city);
+		director.loadScene("weather");
+	}
+
+	loadCityByName (city:string)
+	{
 		this.onLoading = true;
 		OpenWeather.GET_DATA (
 			OpenWeather.API_URL_GET_BY_CITY (city),
+			this.onLoadCompleted.bind (this)
+		);
+	}
+
+	loadCityByLocation (lat:number, lon:number)
+	{
+		this.onLoading = true;
+		OpenWeather.GET_DATA (
+			OpenWeather.API_URL_GET_BY_GEOGRAPHIC_COORDINATES (lat, lon),
 			this.onLoadCompleted.bind (this)
 		);
 	}
@@ -73,7 +150,17 @@ export class CitiesWidget extends Component
 			return;
 		}
 
-		CitiesWidget.currentCityData = jsonStr;
-		director.loadScene("weather");
+		try
+		{
+			let obj = JSON.parse (jsonStr);
+			let name:string = obj.name;
+
+			log ("onLoadCompleted", name, jsonStr);
+			CitiesWidget.citiesData.set (name, obj);
+		}
+		catch (error)
+		{
+			log ("onLoadCompleted", "error", "cannot parse data", jsonStr);
+		}
 	}
 }

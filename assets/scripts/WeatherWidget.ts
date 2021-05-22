@@ -51,16 +51,13 @@ export class WeatherWidget extends Component
         systemEvent.off(SystemEventType.KEY_DOWN, this.onKeyDown, this);
     }
 
-	loadCity (weatherJson:string)
+	loadCity (obj:any)
 	{
-		log ("weatherJson", weatherJson);
-		if (!weatherJson)
+		if (!obj)
 			return;
 
-		let obj = null;
 		try
 		{
-			obj = JSON.parse (weatherJson);
 			this._data = obj;
 			this._temperature = obj.main.temp;
 			this._feelslike = obj.main.feels_like;
