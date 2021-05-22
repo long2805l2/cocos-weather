@@ -11,8 +11,7 @@ export class CityItem extends Component
 	@property({type: Label})
 	nameLabel:Label|null = null;
 
-	public onClick: ((city:string) => void) | null = null;
-	private isSelected:boolean = false;
+	private onClick: ((city:string) => void) | null = null;
 
 	start ()
 	{
@@ -20,10 +19,6 @@ export class CityItem extends Component
 			return;
 			
 		this.nameLabel.string = this.nameCity;
-		//this.node.on(Node.EventType.MOUSE_DOWN, this.onTouch.bind (this));
-		this.node.on(Node.EventType.TOUCH_START, this.onTouchStart.bind (this));
-		this.node.on(Node.EventType.TOUCH_END, this.onTouchEnd.bind (this));
-		this.node.on(Node.EventType.TOUCH_MOVE, this.onTouchMove.bind (this));
 	}
 
 	init (city:string, callback: (city:string) => void)
@@ -38,22 +33,10 @@ export class CityItem extends Component
 	update (deltaTime: number)
 	{
 	}
-
-	onTouchStart (event:any)
+	
+	onTouch (event:any)
 	{
-		this.isSelected = true;
-	}
-
-	onTouchEnd (event:any)
-	{
-		if (this.onClick && this.isSelected)
+		if (this.onClick)
 			this.onClick (this.nameCity);
-
-		this.isSelected = false;
-	}
-
-	onTouchMove (event:any)
-	{
-		this.isSelected = false;
 	}
 }
